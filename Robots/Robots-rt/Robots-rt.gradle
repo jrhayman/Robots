@@ -17,7 +17,11 @@ dependencies {
   compile "Tridium:bql-rt:4.9"
   compile "Tridium:control-rt:4.9"
   compile "Tridium:bacnet-rt:4.9"
-
+  compile "Tridium:nrio-rt:4.9"
+  compile "LynxSpring:onyxxDriver-rt:4.9"
+  compile "Tridium:driver-rt:4.9"
+  compile "Tridium:alarm-rt:4.9"
+  compile "Tridium:kitControl-rt:4.9"
 }
 
 moduleTestJar {
