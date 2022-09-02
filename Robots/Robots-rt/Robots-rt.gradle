@@ -22,6 +22,11 @@ dependencies {
   compile "Tridium:driver-rt:4.9"
   compile "Tridium:alarm-rt:4.9"
   compile "Tridium:kitControl-rt:4.9"
+  compile "Tridium:basicDriver-rt:4.9"
+  compile "Tridium:ndriver-rt:4.9"
+  compile "Tridium:edgeIo-rt:4.9"
+  compile "Tridium:niagaraDriver-rt:4.9"
+  compile "LynxSpring:onyxxVAV-rt:4.9"
 }
 
 moduleTestJar {
