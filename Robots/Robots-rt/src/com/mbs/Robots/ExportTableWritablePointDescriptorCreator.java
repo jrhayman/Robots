@@ -37,25 +37,34 @@ public class RobotImpl
         int instNumSet = 6000;
         String deviceType = "niagaraDriver:NiagaraStation";
 
+        //generate table of points from baseOrd
         String bql = "bql:select * from control:ControlPoint";
         BOrd query = BOrd.make(baseOrd + "|" + bql);
         BITable result = (BITable) query.resolve().get();
         Cursor crs = result.cursor();
 
 
-
+        //generating ExportFolder from tableFolderOrd
         BBacnetExportFolder exportFolder = (BBacnetExportFolder) BOrd.make(tableFolderOrd).resolve().get();
         log.println(exportFolder.getName());
+        //instance number used for ObjectID
         int avNum = instNumSet;
 
+        //creating array of properties that are associated with Object Type naturally. These properties will be set to values when point type is known.
         Property[] properties = new Property[]{BBacnetAnalogValuePrioritizedDescriptor.pointOrd, BBacnetAnalogValuePrioritizedDescriptor.objectId, BBacnetAnalogValuePrioritizedDescriptor.objectName};
-
+        //loop through table
         while(crs.next()){
+            //getting pointer object and casting it to a BComponent
             BComponent point = (BComponent) crs.get();
+
             BBacnetAnalogValuePrioritizedDescriptor descriptor = new BBacnetAnalogValuePrioritizedDescriptor();
+            //get ObjectName value for export point: pretty much slot path but with '.' instead of '/'
             String objectName = point.getSlotPath().toString().replace("slot:/", "").replace("/", ".");
+            //creating the array of values associated with array of properties, ObjectIdentifier: Knowing what ObjectType value to use can be found at bottom of program.
             BValue[] values = new BValue[]{point.getHandleOrd(), BBacnetObjectIdentifier.make(2,avNum), BString.make(objectName)};
+            //setting PointDescriptorProperties.
             descriptor.set(properties,values,null);
+
             String name = descriptor.getObjectId().toString().replace(":", "_");
             avNum++;
             try {
@@ -65,8 +74,10 @@ public class RobotImpl
                 exportFolder.set(name, descriptor);
                 log.println("set\n\n");
             }
+            //getting newly added PointDescriptors HandleOrd
             BOrd source = ((BComponent) exportFolder.get(name)).getHandleOrd();
-            log.println(source);
+            //adding a BLink slot to the original Point. source is PointDescriptor, target is the original Point.
+            //adding a Blink for each element of PriorityArray.
             descriptor.add("bacnetValueIn1", new BStatusNumeric());
             point.add("bacnetin1", new BLink(source, "bacnetValueIn1", BNumericWritable.in1.getName(), true));
 
