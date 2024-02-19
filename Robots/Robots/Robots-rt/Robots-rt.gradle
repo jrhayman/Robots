@@ -17,6 +17,9 @@ dependencies {
   compile "Tridium:bql-rt:4.9"
   compile "Tridium:control-rt:4.9"
   compile "Tridium:bacnet-rt:4.9"
+  compile "Tridium:NiagaraDriver-rt:4.9"
+  compile "Tridium:Driver-rt:4.9"
+  compile "Tridium:KitControl-rt:4.9"
 
 }
 

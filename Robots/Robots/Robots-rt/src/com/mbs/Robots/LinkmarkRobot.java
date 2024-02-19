@@ -32,7 +32,7 @@ public class RobotImpl
             BLink fallback = new BLink(point.getHandleOrd(), "fallback", "in10", true);
             try{
                 point.add("RobotLink16", in16);
-
+                point.rename((Property) point.get("in16"), "newname");
             }catch(Exception e){
                 point.set("RobotLink16", in16);
             }try{
