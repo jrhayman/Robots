@@ -43,7 +43,7 @@ task javadocJar (dependsOn: javadoc, type: Jar) {
   
   doLast {
     project.copy {
-      into { "$rootProject.ext.niagara_home/javadoc" }
+      into { "$niagara_home/javadoc" }
       from archivePath
       rename archiveName, "${baseName}-javadoc.jar"
     }

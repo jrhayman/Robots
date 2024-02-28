@@ -77,7 +77,9 @@ public class RobotImpl
                     }
                 }
             }
+            log.println(point.getFacets().toString());
             newPoint.setFacets((BFacets) point.getFacets().newCopy());
+            log.println(newPoint.getFacets().toString());
             parent.remove(point.getName());
             parent.rename(propPointer, name);
             ((BBacnetProxyExt)newPoint.getProxyExt()).setEnabled(true);

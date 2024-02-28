@@ -8,6 +8,7 @@ import groovy.io.FileType
 pluginManagement {
   apply from: 'environment.gradle'
 
+
   resolutionStrategy {
     eachPlugin {
       if (requested.id.namespace == 'com.tridium') {
