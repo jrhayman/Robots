@@ -13,6 +13,7 @@ import javax.baja.sys.*;         /* baja Predefined*/
 import javax.baja.status.*;      /* baja Predefined*/
 import javax.baja.util.*;        /* baja Predefined*/
 
+import com.tridium.nre.util.tuple.Pair;
 import com.tridium.program.*;    /* program-rt Predefined*/
 import org.jetbrains.annotations.Nullable;
 
@@ -33,21 +34,44 @@ public class ProgramImpl
             super(id, values);
         }
 
-        public BComponent getCurrent(){
-            for (BBacnetDevice cmp:(BBacnetDevice[]) this.value) {
-                if(cmp.getConfig().getDeviceObject().getObjectId().getId() != -1)
-                    return cmp;
-            }
-            return null;
+    }
+    private class Tuple<A,B>{
+        A a;
+        B b;
+
+        public Tuple(A a, B b){
+            this.a = a;
+            this.b = b;
         }
     }
 
 
     /*
-     creating a data structure of <pointer, Group> where the Group is <DeviceID, [ORDS]>
+
+                        ********** SETUP *********
+      - Disable all histories of faulted histories.
+      - Create 'Groups' of common device IDs,
+      follow template below for new groups add them to Group List.
+      - Depending on how often the block is triggered you may want
+      to consider the length of the interval for histories since they
+      are disabled.
+                        ********** Process *********
+      when the block starts it will clear the Group List and add All groups.
+      when the block is executed it will disable current device histories,
+      enable the next device in each groups list, then wait (90) seconds
+      before activating each groups new Device histories.
+
      */
 
-    Hashtable<Integer, Group> groups = new Hashtable<Integer,Group>();
+
+
+
+
+    /*
+     data structure of <pointer, Group> where the Group is <DeviceID, [ORDS]>
+     */
+
+    ArrayList<Tuple<Integer, Group>> groups = new ArrayList<>();
     private Worker worker;
     private javax.baja.util.Queue queue = new javax.baja.util.Queue();
     Group group1 = new Group(1, new BBacnetDevice[]{
@@ -68,6 +92,7 @@ public class ProgramImpl
             (BBacnetDevice) BOrd.make("ord1").resolve().get(),
             (BBacnetDevice) BOrd.make("ord2").resolve().get()
     });
+    //Used during OnStart this will
     public Integer findEnabled(Group g){
         int i = 0;
         for (BBacnetDevice device:(BBacnetDevice[]) g.value) {
@@ -88,10 +113,10 @@ public class ProgramImpl
     {
         groups.clear();
         //add and remove created groups as needed.
-        groups.put(findEnabled(group1), group1);
-        groups.put(findEnabled(group2), group2);
-        groups.put(findEnabled(group3), group3);
-        groups.put(findEnabled(group4), group4);
+        groups.add(new Tuple<>(findEnabled(group1), group1));
+        groups.add(new Tuple<>(findEnabled(group2), group2));
+        groups.add(new Tuple<>(findEnabled(group3), group3));
+        groups.add(new Tuple<>(findEnabled(group4), group4));
 
         if(worker == null){
             worker = new Worker(queue);
@@ -99,6 +124,8 @@ public class ProgramImpl
         }
         Thread thread = new Thread(this, getComponent().getName());
         thread.start();
+
+
     }
 
     public void onExecute() throws Exception
@@ -115,42 +142,51 @@ public class ProgramImpl
     public void run(){
         // Groups: <pointer, Group> where the Group is <DeviceID, [ORDS]>
         //pointer is to specific ORD
+        Iterator it = groups.iterator();
+        while(it.hasNext()){
+            Tuple<Integer, Group> g = (Tuple<Integer, Group>) it.next();
 
-        groups.forEach((integer, group) -> {
-            //current
-            System.out.println("Group: " + group.key);
-            (((BBacnetDevice[]) group.value)[integer]).getConfig().getDeviceObject().setObjectId(BBacnetObjectIdentifier.make(8,-1));
-            //next
-            System.out.println("Old Device: " + (((BBacnetDevice[]) group.value)[integer]).getSlotPath() +"\n" +
-                    "Pointer Value: " + integer);
-            integer = integer+1;
-            integer = (integer+1)%((BBacnetDevice[])group.value).length;
-            ((BBacnetDevice[]) group.value)[integer].getConfig().getDeviceObject().setObjectId(BBacnetObjectIdentifier.make(8,(Integer) group.key));
-            System.out.println("New Device: " + (((BBacnetDevice[]) group.value)[integer]).getSlotPath() +"\n" +
-                    "Pointer Value: " + integer + "\n");
-
-
-        });
-
+            System.out.println("Group: " + g.b.key);
+            //set current group's device to -1
+            ((BBacnetDevice[])g.b.value)[g.a].getConfig().getDeviceObject().setObjectId(BBacnetObjectIdentifier.make(8, -1));
+            //Deactivate histories for all points in this device
+            BOrd q = BOrd.make("station:|"+(((BBacnetDevice[])g.b.value)[g.a]).getSlotPathOrd().toString()+ "|bql:select * from history:HistoryConfig");
+            BITable t = (BITable)q.resolve().get();
+            Cursor crs = t.cursor();
+            while(crs.next()){
+                BHistoryConfig config = (BHistoryConfig) crs.get();
+                BHistoryExt ext = (BHistoryExt) config.getParent();
+                ext.setEnabled(false);
+//               ext.deactivate();
+            }
+            System.out.println("Old Device: " + (((BBacnetDevice[]) g.b.value)[g.a]).getSlotPath() +"\n" +
+                    "Pointer Value: " + g.a);
+            //increment pointer and set next device to group's device ID
+            g.a =  (g.a+1)%((BBacnetDevice[])g.b.value).length;
+            ((BBacnetDevice[]) g.b.value)[g.a].getConfig().getDeviceObject().setObjectId(BBacnetObjectIdentifier.make(8,(Integer) g.b.key));
+            System.out.println("New Device: " + (((BBacnetDevice[]) g.b.value)[g.a]).getSlotPath() +"\n" +
+                    "Pointer Value: " + g.a + "\n");
+        }
         // how to let history program block know of current device?
         // wait and run histories in a thread?
         System.out.println("started task ["+Thread.currentThread().getName()+"]");
-        //allow time for points to subscribe
+        //allow time for points to subscribe set to 1:30 minutes
         try{Thread.sleep(90000);}
         catch (InterruptedException e) {/*do nothing*/}
-
-
-        groups.forEach((integer, group) -> {
-
-           BOrd q = BOrd.make("station:|"+(((BBacnetDevice[])group.value)[integer]).getSlotPathOrd().toString()+ "|bql:select * from history:HistoryConfig");
+        //activate histories of the current operating devices points.
+        it = groups.iterator();
+        while(it.hasNext()){
+            Tuple<Integer, Group> g = (Tuple<Integer, Group>) it.next();
+            BOrd q = BOrd.make("station:|"+(((BBacnetDevice[])g.b.value)[g.a]).getSlotPathOrd().toString()+ "|bql:select * from history:HistoryConfig");
             BITable t = (BITable)q.resolve().get();
             Cursor crs = t.cursor();
             while (crs.next()){
                 BHistoryConfig config = (BHistoryConfig) crs.get();
                 BHistoryExt ext = (BHistoryExt) config.getParent();
-                ext.activate();
+//              ext.activate();
+                ext.setEnabled(true);
             }
-        });
+        }
         System.out.println("ended task ["+Thread.currentThread().getName()+"]");
     }
 
