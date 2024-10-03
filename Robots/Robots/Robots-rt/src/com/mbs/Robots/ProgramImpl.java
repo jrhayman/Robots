@@ -1,4 +1,4 @@
-/* Auto-generated com.mbs.Robots.ProgramImpl Code */
+/* Auto-generated ProgramBlocks.ProgramImpl Code */
 
 import java.util.*;              /* java Predefined*/
 import javax.baja.nre.util.*;    /* nre Predefined*/

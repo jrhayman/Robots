@@ -1,5 +1,6 @@
-package com.mbs.Robots;// depends: baja; program; niagaraDriver
+// depends: baja; program; bacnet; niagaraDriver
 
+import javax.baja.bacnet.point.BBacnetPointFolder;
 import javax.baja.collection.BITable;
 import javax.baja.control.BControlPoint;
 import javax.baja.control.BStringPoint;
@@ -12,6 +13,9 @@ import com.tridium.nd.BNiagaraStation;
 import com.tridium.nd.point.BNiagaraPointFolder;
 import com.tridium.nd.point.BNiagaraProxyExt;
 import com.tridium.program.*;
+import com.tridium.sys.transfer.TransferStrategy;
+
+import java.lang.reflect.Array;
 
 public class RobotImpl
         extends Robot
@@ -26,62 +30,91 @@ public class RobotImpl
     public void process(BComponent c)
             throws Exception {
 
-//        Mark mark = new Mark((BComponent) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/Shepard_Hills/ERVU_1/SHH_VAV_1_1/SliderEnable").resolve(Sys.getStation()).get());
-//        BITable t = (BITable) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/Shepard_Hills/ERVU_1 | bql:select * from niagaraDriver:NiagaraStation where name like '*VAV*'").resolve().get();
-//        Cursor crs = t.cursor();
-//        crs.next();
-//        while(crs.next()){
-//            mark.copyTo((BComponent)crs.get(), Context.copying);
-//            BComponent source = (BComponent) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/Shepard_Hills/ERVU_1/"+((BComponent)crs.get()).getName()+"/SliderEnable/SliderEnable").resolve(Sys.getStation()).get();
-//            BComponent target = (BComponent) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/Shepard_Hills/ERVU_1/"+((BComponent)crs.get()).getName()+"/Global/DisableSliders").resolve(Sys.getStation()).get();
-//            target.add("SliderLogicLink", new BLink(source.getHandleOrd(), "out", "in10", true));
-//        }
-//        BComponent SliderEnableLogicPoint = (BComponent) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/Shepard_Hills/ERVU_1/SHH_VAV_1_1/SliderEnable/SliderEnable").resolve(Sys.getStation()).get();
-//        BComponent DeviceSliderEnable = (BComponent) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/Shepard_Hills/ERVU_1/SHH_VAV_1_1/Global/DisableSliders").resolve(Sys.getStation()).get();
-//        BLink newLink = new BLink(SliderEnableLogicPoint.getHandleOrd(), "out", "in10", true);
-//        DeviceSliderEnable.add("SliderLogicLink", newLink);
-//        Mark mark = new Mark((BComponent) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/Carollton/AHU_1/CRL_VAV_1_1/Setpoints/SliderSp").resolve(Sys.getStation()).get());
-//        BITable t = (BITable) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/High_School | bql:select * from niagaraDriver:NiagaraStation where name like '*VAV*'").resolve().get();
-//        Cursor crs = t.cursor();
-////        crs.next();
-//        while(crs.next()){
-//            BComponent component = (BComponent) crs.get();
-//            mark.copyTo(BOrd.make(component.getSlotPath()+"/Setpoints").resolve(Sys.getStation()).get(), Context.copying);
-//            log.println(component.getName());
-//        }
-        String b = "station:|slot:/Drivers/NiagaraNetwork/MahoneBldg1/points/AHUs/AC010/VAVs";
-        String q = "bql:select * from niagaraDriver:NiagaraPointFolder where name like 'VAV*'";
-        BITable t = (BITable) BOrd.make(b+"|"+q).resolve().get();
-        //Mark m = new Mark((BComponent) BOrd.make("station:|slot:/Drivers/NiagaraNetwork/PleasantPrairieBldg/points/AHUs/AHU$2d3/VAVs/FPB_01/location").resolve(Sys.getStation()).get());
-        String point = "VAV112";
-        String location = "station:|slot:/Drivers/NiagaraNetwork/MahoneBldg1/points/AHUs/AC010/VAVs/VAV112/location";
-        String desc = "station:|slot:/Drivers/NiagaraNetwork/MahoneBldg1/points/AHUs/AC010/VAVs/VAV112/description";
 
-        Mark m = new Mark(new BObject[]{BOrd.make(location).resolve(Sys.getStation()).get(), BOrd.make(desc).resolve(Sys.getStation()).get()});
+        /************COPY SINGLE DAMPER TO HD/ND OUTPUTS LOGIC AND RELINK************************/
+//        Mark mark = new Mark((BComponent[]) new BComponent[]{BOrd.make("        station:|slot:/Drivers/BacnetNetwork/Alex_Haley/NAE01/points/AHU1/BooleanSelect").resolve().getComponent(),
+//                BOrd.make("station:|slot:/Drivers/BacnetNetwork/Alex_Haley/NAE01/points/AHU2_MixingBoxes/MB1/Rm108/ND_O").resolve().getComponent(),
+//                BOrd.make("station:|slot:/Drivers/BacnetNetwork/Alex_Haley/NAE01/points/AHU2_MixingBoxes/MB1/Rm108/HD_O").resolve().getComponent()});
+//
+//        BITable t = (BITable) BOrd.make("station:|slot:/Drivers/BacnetNetwork/$351510_BES/NCE01/points/AHU_1_Zones | bql:select * from bacnet:BacnetPointFolder ").resolve(Sys.getStation()).get();
+//        BBacnetPointFolder folder;
+//        BComponent params = new BComponent();
+//        params.add(TransferStrategy.PARAM_KEEP_ALL_LINKS, BBoolean.make("true"));
+//        Cursor crs = t.cursor();
+//        while(crs.next()) {
+//            folder = (BBacnetPointFolder) crs.get();
+//            Boolean exists = false;
+//            for(BComponent cmp : folder.getChildComponents()){
+//                if(cmp.getName().equals("HD_O"))
+//                    exists = true;
+//            }
+//            if(!exists) {
+//                log.println(folder.getName());
+//                mark.copyTo(folder, params, Context.copying);
+//                //change links from original damper output
+//                /***Subtract Component***/
+//                ((BLink) folder.get("Subtract").asComponent().getLinks()[0]).setSourceOrd((BOrd) folder.get("ZND_O").asComponent().getHandleOrd());
+//                /***HD_***/
+//                ((BLink) folder.get("HD_O").asComponent().getLinks()[0]).setSourceOrd((BOrd) folder.get("ZND_O").asComponent().getHandleOrd());
+//            }
+//        }
+        /*****************************END********************************************************/
+
+        /************COPY SINGLE DAMPER TO HD/CD OUTPUTS LOGIC AND RELINK************************/
+        Mark mark = new Mark((BComponent[]) new BComponent[]{BOrd.make("station:|slot:/Drivers/BacnetNetwork/$351521_GW/RTU1/points/Zones/Zn1/CD_Damper").resolve().getComponent(),
+                BOrd.make("station:|slot:/Drivers/BacnetNetwork/$351521_GW/RTU1/points/Zones/Zn1/HD_Damper").resolve().getComponent(),
+                BOrd.make("station:|slot:/Drivers/BacnetNetwork/$351521_GW/RTU1/points/Zones/Zn1/Subtract").resolve().getComponent()});
+        BITable t = (BITable) BOrd.make("station:|slot:/Drivers/BacnetNetwork/$351618_JohnHope/NCE01/points/RTU_1E/RTU1E_Zones | bql:select * from bacnet:BacnetPointFolder where parent.name like 'RH*'").resolve(Sys.getStation()).get();
+        BBacnetPointFolder folder;
+        BComponent params = new BComponent();
+        params.add(TransferStrategy.PARAM_KEEP_ALL_LINKS, BBoolean.make("true"));
         Cursor crs = t.cursor();
-        crs.next();
-        while(crs.next()){
-            BComponent p = (BComponent) crs.get();
-            log.println(((BComponent)crs.get()).getName() + ":");
-            try{
-                m.copyTo(p, Context.copying);
-                BNiagaraProxyExt l = (BNiagaraProxyExt) ((BStringPoint)BOrd.make(location).resolve(Sys.getStation()).get()).getProxyExt();
-                BNiagaraProxyExt d = (BNiagaraProxyExt) ((BStringPoint)BOrd.make(desc).resolve(Sys.getStation()).get()).getProxyExt();
-                ((BNiagaraProxyExt)((BStringPoint)p.get("location")).getProxyExt()).setPointId(l.getPointId().replace(point, p.getName()));
-                ((BNiagaraProxyExt)((BStringPoint)p.get("description")).getProxyExt()).setPointId(d.getPointId().replace(point, p.getName()));
-                log.println(((BStringPoint) p.get("location")).getOut().getValue());
-                log.println(((BStringPoint) p.get("description")).getOut().getValue());
-            }catch ( Exception e){
-                log.println(e.getMessage());
-
+        while(crs.next()) {
+            folder = (BBacnetPointFolder) crs.get();
+            Boolean exists = false;
+            for(BComponent cmp : folder.getChildComponents()){
+                if(cmp.getName().equals("HD_Damper"))
+                    exists = true;
+            }
+            if(!exists) {
+                log.println(folder.getName());
+                mark.copyTo(folder, params, Context.copying);
+                //change links from original damper output
+                /***Subtract Component***/
+                ((BLink) folder.get("Subtract").asComponent().getLinks()[0]).setSourceOrd((BOrd) folder.get("D").asComponent().getHandleOrd());
+                /***HD_***/
+                ((BLink) folder.get("CD_Damper").asComponent().getLinks()[0]).setSourceOrd((BOrd) folder.get("D").asComponent().getHandleOrd());
             }
 
-//            BComponent  point = (BComponent)crs.get();
-//            log.println(point.getSlotPath());
-//            if(point.get("NumericInterval") == null){
-//                m.copyTo(point, Context.copying);
+        /*****************************END********************************************************/
+
+        /************COPY ENUM OCC TO BOOL OCC LOGIC************************/
+//        Mark mark = new Mark((BComponent[]) new BComponent[]{BOrd.make("station:|slot:/Drivers/BacnetNetwork/Alex_Haley/NAE01/points/AHU1/BooleanSelect").resolve().getComponent(),
+//                BOrd.make("station:|slot:/Drivers/BacnetNetwork/Alex_Haley/NAE01/points/AHU1/Occ").resolve().getComponent()});
+//
+//        BITable t = (BITable) BOrd.make("station:|slot:/Drivers/BacnetNetwork/$351510_BES | bql:select * from bacnet:BacnetPointFolder").resolve(Sys.getStation()).get();
+//
+//        BBacnetPointFolder folder;
+//        BComponent params = new BComponent();
+//        params.add(TransferStrategy.PARAM_KEEP_ALL_LINKS, BBoolean.make("true"));
+//        Cursor crs = t.cursor();
+//        while(crs.next()) {
+//
+//            folder = (BBacnetPointFolder) crs.get();
+//            //see if EFF_OCC exists to continue
+//            try {
+//                BComponent EFF_OCC = (BComponent) folder.get("EFF_OCC");
+//            }catch (Exception e){
+//                continue;
 //            }
+//
+//            log.println(folder.getName());
+//            mark.copyTo(folder, params, Context.copying);
+//            //change links from original Occupancy point
+//            /*BoolSelect*/
+//            ((BLink) folder.get("BooleanSelect").asComponent().getLinks()[0]).setSourceOrd((BOrd) folder.get("EFF_OCC").asComponent().getHandleOrd());
         }
+        /*****************************END********************************************************/
 
     }
 }

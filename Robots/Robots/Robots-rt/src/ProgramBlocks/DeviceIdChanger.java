@@ -76,7 +76,7 @@ public class ProgramImpl
     private javax.baja.util.Queue queue = new javax.baja.util.Queue();
     Group group1 = new Group(1, new BBacnetDevice[]{
             (BBacnetDevice) BOrd.make("ord1").resolve().get(),
-            (BBacnetDevice) BOrd.make("ord2").resolve().get(),
+            (BBacnetDevice) BOrd.make("ord2").resolve().get()
     });
     Group group2 = new Group(10000, new BBacnetDevice[]{
             (BBacnetDevice) BOrd.make("ord1").resolve().get(),
@@ -103,7 +103,6 @@ public class ProgramImpl
             i++;
         }
         Logger.getLogger(this.getComponent().getTypeDisplayName(null)).log(Level.INFO, "All values for group ID " + g.key.toString() + " are -1");
-
         return 0;
     }
 

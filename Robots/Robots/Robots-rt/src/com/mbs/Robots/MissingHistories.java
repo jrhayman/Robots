@@ -30,32 +30,30 @@ public class RobotImpl
     public void process(BComponent c)
             throws Exception
     {
-        String ord = "station:|slot:/Drivers/BacnetNetwork";
-        String bql = "bql:select * from control:ControlPoint";
+        String ord = "station:|slot:/Drivers/NiagaraNetwork";
+        String bql = "bql:select * from control:ControlPoint where type like 'control*' and !(type like '*String*') and proxyExt.type like 'niagara*'";
         BOrd query = BOrd.make(ord + "|" + bql);
         BITable result = (BITable) query.resolve().get();
         Cursor crs = result.cursor();
         while(crs.next()){
             BComponent point = (BComponent) crs.get();
             Boolean hasExt = false;
-            if(!(point instanceof BMath || point instanceof BMuxSwitch || point instanceof BLogic || point instanceof BKitNumericPoint || point instanceof BKitBooleanPoint || point instanceof BKitEnumPoint || point instanceof BStringPoint)) {
-                String name = point.getName();
-                if(!(name.equals("ColorSelect")||name.equals("Controller")||name.equals("TimeDelay")||name.equals("Forced")||name.equals("DiagCond"))){
-                    if(point instanceof BNumericSwitch)
-                    {  log.println("why"); }
-                    for (BComponent child : point.getChildComponents()) {
-                        hasExt = child instanceof BHistoryExt;
-                        if (hasExt) break;
-                    }
-                    if(!hasExt) log.println(point.getSlotPath().toString());
+            String name = point.getName();
+            if(name.equals("ValveAControlLevel")|| name.equals("ValveBControlLevel")|| name.equals("ValveCls") || name.equals("ValveOpn")
+                    ||  name.equals("ControllerDown")||name.contains("Ovrd") ||name.equals("OxygenAlarm")||name.contains("Color")||name.equals("EasyTrack")||name.contains("ControlLvl")
+                    || name.contains("Controller")|| name.contains("Loop") || name.contains("address") || name.contains("ScheduleExh")
+                    || name.contains("Override") || name.contains("Drive")){continue;}
+            else{
+                for (BComponent child : point.getChildComponents()) {
+                    hasExt = child instanceof BHistoryExt;
+                    if (hasExt) break;
                 }
             }
-
-
-
+            if(!hasExt) log.println(point.getSlotPath().toString());
         }
     }
-
-
-
 }
+
+
+
+
