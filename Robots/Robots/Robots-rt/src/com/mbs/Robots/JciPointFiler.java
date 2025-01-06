@@ -39,7 +39,7 @@ public class RobotImpl
             String[] pathSplit = p.getDisplayName(null).split("\\.");
             String pointName = pathSplit[pathSplit.length-1].replace(' ', '_').replace('-', '_');
 //            String device = pathSplit[pathSplit.length-2].replace(' ', '_').replace('-', '_');
-            String device = pathSplit[0].replace(' ', '_').replace('-', '_');
+            String device = pathSplit[pathSplit.length-2].replace(' ', '_').replace('-', '_');
             BBacnetPointFolder deviceFolder = (BBacnetPointFolder) pointsDeviceExt.get(device);
             if(deviceFolder == null){
                 deviceFolder = new BBacnetPointFolder();
