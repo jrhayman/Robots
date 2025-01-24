@@ -125,7 +125,6 @@ public class RobotImpl
         String base = "";
         String query = "";
 
-
         Mark mark = new Mark((BComponent)BOrd.make(copyOrd).resolve().get());
         BComponent params = new BComponent();
         params.add(TransferStrategy.PARAM_KEEP_ALL_LINKS, BBoolean.make("true"));
@@ -149,10 +148,11 @@ public class RobotImpl
                 log.println(element.getName());
                 mark.copyTo(element, params, Context.copying);
                 ((BLink)element.get("damperPOS").asComponent().getLinks()[0]).setSourceOrd((BOrd) element.get(fromLinkName).asComponent().getHandleOrd());
+            }
+
+            /*****************************END********************************************************/
+
+
         }
-
-        /*****************************END********************************************************/
-
-
     }
 }

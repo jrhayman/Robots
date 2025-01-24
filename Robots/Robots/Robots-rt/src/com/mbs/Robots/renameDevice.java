@@ -44,7 +44,7 @@ public class RobotImpl
 
                 BComponent parent = ((BComponent)device.getParent());
                 Property p = parent.getProperty(device.getName());
-                parent.rename(parent.getProperty(device.getName()), "desc");
+                parent.rename(parent.getProperty(device.getName()), desc);
             }
             catch (Exception e){
                 log.println(e.getMessage());
